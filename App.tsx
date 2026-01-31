@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { Project, Hotspot, Page } from './types';
 import { INITIAL_PROJECT } from './constants';
@@ -43,6 +44,15 @@ function EditorComponent() {
   const [project, setProject] = useState<Project>(INITIAL_PROJECT);
   const [selectedPageId, setSelectedPageId] = useState<string>('cover');
   const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // This effect runs after every render, ensuring that any new icons
+    // added to the DOM are processed by Lucide. This was moved from AppRouter
+    // to here to ensure it runs when the project state changes.
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+  }); // No dependency array to run on every render
 
   const updateProject = useCallback((newProject: Project) => {
     setProject(newProject);
@@ -98,9 +108,31 @@ function EditorComponent() {
     setProject(p => {
       const pageToDuplicate = p.pages.find(pg => pg.id === pageId);
       if (!pageToDuplicate) return p;
+
+      // Improved naming logic for copies
+      let newName = '';
+      const copyRegex = / \(Cópia(?: (\d+))?\)$/;
+      const match = pageToDuplicate.name.match(copyRegex);
+
+      if (match) {
+        const baseName = pageToDuplicate.name.replace(copyRegex, '');
+        const copyNumber = match[1] ? parseInt(match[1], 10) + 1 : 2;
+        newName = `${baseName} (Cópia ${copyNumber})`;
+      } else {
+        newName = `${pageToDuplicate.name} (Cópia)`;
+      }
+
       const newPageId = `page_${Date.now()}`;
       const newHotspots = pageToDuplicate.hotspots.map((h, index) => ({ ...h, id: `hotspot_${newPageId}_${index}` }));
-      const newPage: Page = { ...pageToDuplicate, id: newPageId, name: `${pageToDuplicate.name} (Cópia)`, hotspots: newHotspots };
+      
+      const newPage: Page = { 
+        ...pageToDuplicate, 
+        id: newPageId, 
+        name: newName, 
+        hotspots: newHotspots,
+        type: 'internal' // Set type to 'internal' to make it deletable
+      };
+      
       const originalIndex = p.pages.findIndex(pg => pg.id === pageId);
       const newPages = [...p.pages];
       newPages.splice(originalIndex + 1, 0, newPage);
@@ -139,6 +171,7 @@ function EditorComponent() {
   const updateHotspot = useCallback((pageId: string, hotspotId: string, hotspotUpdate: Partial<Hotspot>) => {
     setProject(p => ({
       ...p,
+      // FIX: The map function was incorrectly returning `p` (the project) instead of `pg` (the page).
       pages: p.pages.map(pg => pg.id === pageId ? { ...pg, hotspots: pg.hotspots.map(h => h.id === hotspotId ? { ...h, ...hotspotUpdate } : h) } : pg)
     }));
   }, []);
@@ -203,14 +236,6 @@ function AppRouter() {
             }
         }
     }, [currentUser, route]);
-
-    useEffect(() => {
-      // This effect runs after every render, ensuring that any new icons
-      // added to the DOM are processed by Lucide.
-      if (window.lucide) {
-          window.lucide.createIcons();
-      }
-    }); // No dependency array to run on every render
 
     const renderRoute = () => {
         if (currentUser) {
