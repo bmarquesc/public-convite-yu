@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../../services/dbService';
 import { hashPassword, generateTempPassword } from '../../utils/cryptoUtils';
@@ -50,11 +49,11 @@ export default function AdminPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 bg-rose-50 min-h-screen">
              <div className="sm:flex sm:items-center mb-6">
                 <div className="sm:flex-auto">
                     <div className="flex items-center gap-4">
-                        <a href="#/editor" className="p-2 rounded-full hover:bg-slate-200 transition-colors">
+                        <a href="#/editor" className="p-2 rounded-full hover:bg-rose-200 transition-colors" aria-label="Voltar ao editor">
                             <i data-lucide="arrow-left" className="w-6 h-6 text-slate-600"></i>
                         </a>
                         <div>
@@ -76,25 +75,30 @@ export default function AdminPage() {
                                         <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-pink-900">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
+                                <tbody className="divide-y divide-rose-100 bg-white">
                                     {users.map((user) => (
                                         <tr key={user.email}>
-                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{user.email} {user.role === 'admin' && <span className="text-xs font-bold text-blue-600">(Admin)</span>}</td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${statusStyles[user.status]}`}>
+                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                                <div className="font-medium text-slate-800">{user.email}</div>
+                                                {user.role === 'admin' && <div className="text-blue-600 text-xs">Administrador</div>}
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                                                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusStyles[user.status]}`}>
                                                     {user.status}
                                                 </span>
                                             </td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 space-x-2">
-                                                {user.role !== 'admin' && (
-                                                    <>
-                                                        {user.status === 'PENDING' && <button onClick={() => handleUpdateStatus(user.email, 'APPROVED')} className="text-green-600 hover:text-green-900" title="Aprovar"><i data-lucide="check-circle" className="w-4 h-4"></i></button>}
-                                                        {user.status === 'APPROVED' && <button onClick={() => handleUpdateStatus(user.email, 'BLOCKED')} className="text-red-600 hover:text-red-900" title="Bloquear"><i data-lucide="x-circle" className="w-4 h-4"></i></button>}
-                                                        {user.status === 'BLOCKED' && <button onClick={() => handleUpdateStatus(user.email, 'APPROVED')} className="text-green-600 hover:text-green-900" title="Desbloquear"><i data-lucide="check-circle" className="w-4 h-4"></i></button>}
-                                                        <button onClick={() => handleResetPassword(user.email)} className="text-yellow-600 hover:text-yellow-900" title="Redefinir Senha"><i data-lucide="key-round" className="w-4 h-4"></i></button>
-                                                        <button onClick={() => handleDeleteUser(user.email)} className="text-gray-500 hover:text-red-700" title="Excluir"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
-                                                    </>
-                                                )}
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                                                <div className="flex items-center gap-2">
+                                                    {user.role !== 'admin' && (
+                                                        <>
+                                                            {user.status === 'PENDING' && <button onClick={() => handleUpdateStatus(user.email, 'APPROVED')} className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-full transition-colors" title="Aprovar"><i data-lucide="check-circle" className="w-5 h-5"></i></button>}
+                                                            {user.status === 'APPROVED' && <button onClick={() => handleUpdateStatus(user.email, 'BLOCKED')} className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors" title="Bloquear"><i data-lucide="x-circle" className="w-5 h-5"></i></button>}
+                                                            {user.status === 'BLOCKED' && <button onClick={() => handleUpdateStatus(user.email, 'APPROVED')} className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-full transition-colors" title="Desbloquear"><i data-lucide="check-circle" className="w-5 h-5"></i></button>}
+                                                            <button onClick={() => handleResetPassword(user.email)} className="p-1.5 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100 rounded-full transition-colors" title="Redefinir Senha"><i data-lucide="key-round" className="w-5 h-5"></i></button>
+                                                            <button onClick={() => handleDeleteUser(user.email)} className="p-1.5 text-slate-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors" title="Excluir"><i data-lucide="trash-2" className="w-5 h-5"></i></button>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

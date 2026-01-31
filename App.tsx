@@ -139,7 +139,7 @@ function EditorComponent() {
   const updateHotspot = useCallback((pageId: string, hotspotId: string, hotspotUpdate: Partial<Hotspot>) => {
     setProject(p => ({
       ...p,
-      pages: p.pages.map(pg => pg.id === pageId ? { ...pg, hotspots: pg.hotspots.map(h => h.id === hotspotId ? { ...h, ...hotspotUpdate } : h) } : p)
+      pages: p.pages.map(pg => pg.id === pageId ? { ...pg, hotspots: pg.hotspots.map(h => h.id === hotspotId ? { ...h, ...hotspotUpdate } : h) } : pg)
     }));
   }, []);
 

@@ -933,40 +933,89 @@ function RegisterPage() {
 
 function AdminPage() {
     const [users, setUsers] = React.useState([]);
-    const fetchUsers = React.useCallback(async () => setUsers(await db.getAllUsers()), []);
-    React.useEffect(() => { fetchUsers(); }, [fetchUsers]);
+    const fetchUsers = React.useCallback(async () => {
+        const allUsers = await db.getAllUsers();
+        setUsers(allUsers);
+    }, []);
 
+    React.useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+    
     const handleUpdateStatus = async (email, status) => { const user = await db.getUser(email); if (user) { await db.updateUser({ ...user, status }); fetchUsers(); } };
-    const handleDeleteUser = async (email) => { if (confirm(`Excluir ${email}?`)) { await db.deleteUser(email); fetchUsers(); } };
+    const handleDeleteUser = async (email) => { if (confirm(`Tem certeza que deseja excluir o usuário ${email}? Esta ação não pode ser desfeita.`)) { await db.deleteUser(email); fetchUsers(); } };
     const handleResetPassword = async (email) => {
         const tempPassword = generateTempPassword();
-        if (confirm(`Gerar nova senha para ${email}?`)) {
+        if (confirm(`Gerar uma nova senha temporária para ${email}? A nova senha será exibida uma única vez.`)) {
             const user = await db.getUser(email);
             if (user) {
                 const passwordHash = await hashPassword(tempPassword);
                 await db.updateUser({ ...user, passwordHash, mustChangePassword: true });
-                alert(`Senha temporária para ${email}:\n\n${tempPassword}`);
+                alert(`Senha temporária para ${email}:\n\n${tempPassword}\n\nCopie esta senha e a envie para o usuário. Ele(a) será solicitado(a) a trocá-la no próximo login.`);
                 fetchUsers();
             }
         }
     };
     
-    return e('div', { className: "p-8" },
-        e('div', { className: 'flex items-center mb-6' }, e('a', { href: '#/editor', className: 'p-2 rounded-full hover:bg-slate-200' }, e('i', { 'data-lucide': 'arrow-left' })), e('h1', { className: "text-2xl font-semibold ml-4" }, "Painel de Administração")),
-        e('div', { className: 'overflow-x-auto' }, e('table', { className: 'min-w-full' },
-            e('thead', { className: 'bg-rose-100' }, e('tr', null, e('th', { className: 'p-3' }, "E-mail"), e('th', { className: 'p-3' }, "Status"), e('th', { className: 'p-3' }, "Ações"))),
-            e('tbody', { className: 'bg-white' }, users.map(user => e('tr', { key: user.email },
-                e('td', { className: 'p-3' }, user.email, user.role === 'admin' && e('span', { className: 'font-bold text-blue-600' }, ' (Admin)')),
-                e('td', { className: 'p-3' }, e('span', { className: 'px-2 py-1 rounded-full text-xs' }, user.status)),
-                e('td', { className: 'p-3 space-x-2' }, user.role !== 'admin' && e(React.Fragment, null,
-                    user.status === 'PENDING' && e('button', { onClick: () => handleUpdateStatus(user.email, 'APPROVED') }, 'Aprovar'),
-                    user.status === 'APPROVED' && e('button', { onClick: () => handleUpdateStatus(user.email, 'BLOCKED') }, 'Bloquear'),
-                    user.status === 'BLOCKED' && e('button', { onClick: () => handleUpdateStatus(user.email, 'APPROVED') }, 'Desbloquear'),
-                    e('button', { onClick: () => handleResetPassword(user.email) }, 'Resetar Senha'),
-                    e('button', { onClick: () => handleDeleteUser(user.email) }, 'Excluir')
-                ))
-            )))
-        ))
+    const statusStyles = {
+        APPROVED: "bg-green-100 text-green-800",
+        PENDING: "bg-yellow-100 text-yellow-800",
+        BLOCKED: "bg-red-100 text-red-800"
+    };
+
+    return e('div', { className: "p-4 sm:p-6 lg:p-8 bg-rose-50 min-h-screen" },
+        e('div', { className: "sm:flex sm:items-center mb-6" },
+            e('div', { className: "sm:flex-auto" },
+                e('div', { className: "flex items-center gap-4" },
+                    e('a', { href: "#/editor", className: "p-2 rounded-full hover:bg-rose-200 transition-colors", 'aria-label': "Voltar ao editor" },
+                        e('i', { 'data-lucide': "arrow-left", className: "w-6 h-6 text-slate-600" })
+                    ),
+                    e('div', null,
+                        e('h1', { className: "text-2xl font-semibold leading-6 text-pink-900" }, "Painel de Administração"),
+                        e('p', { className: "mt-2 text-sm text-slate-700" }, "Gerencie os usuários que têm acesso ao editor de convites.")
+                    )
+                )
+            )
+        ),
+        e('div', { className: "mt-8 flow-root" },
+            e('div', { className: "-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8" },
+                e('div', { className: "inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8" },
+                    e('div', { className: "overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg" },
+                        e('table', { className: "min-w-full divide-y divide-rose-200" },
+                            e('thead', { className: "bg-rose-100" },
+                                e('tr', null,
+                                    e('th', { scope: "col", className: "py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-pink-900 sm:pl-6" }, "E-mail"),
+                                    e('th', { scope: "col", className: "px-3 py-3.5 text-left text-sm font-semibold text-pink-900" }, "Status"),
+                                    e('th', { scope: "col", className: "px-3 py-3.5 text-left text-sm font-semibold text-pink-900" }, "Ações")
+                                )
+                            ),
+                            e('tbody', { className: "divide-y divide-rose-100 bg-white" },
+                                users.map(user => e('tr', { key: user.email },
+                                    e('td', { className: "whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6" },
+                                        e('div', { className: "font-medium text-slate-800" }, user.email),
+                                        user.role === 'admin' && e('div', { className: "text-blue-600 text-xs" }, "Administrador")
+                                    ),
+                                    e('td', { className: "whitespace-nowrap px-3 py-4 text-sm text-slate-500" },
+                                        e('span', { className: `inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusStyles[user.status]}` }, user.status)
+                                    ),
+                                    e('td', { className: "whitespace-nowrap px-3 py-4 text-sm text-slate-500" },
+                                        e('div', { className: "flex items-center gap-2" },
+                                            user.role !== 'admin' && e(React.Fragment, null,
+                                                user.status === 'PENDING' && e('button', { onClick: () => handleUpdateStatus(user.email, 'APPROVED'), className: "p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-full transition-colors", title: "Aprovar" }, e('i', { 'data-lucide': "check-circle", className: "w-5 h-5" })),
+                                                user.status === 'APPROVED' && e('button', { onClick: () => handleUpdateStatus(user.email, 'BLOCKED'), className: "p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors", title: "Bloquear" }, e('i', { 'data-lucide': "x-circle", className: "w-5 h-5" })),
+                                                user.status === 'BLOCKED' && e('button', { onClick: () => handleUpdateStatus(user.email, 'APPROVED'), className: "p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-full transition-colors", title: "Desbloquear" }, e('i', { 'data-lucide': "check-circle", className: "w-5 h-5" })),
+                                                e('button', { onClick: () => handleResetPassword(user.email), className: "p-1.5 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-100 rounded-full transition-colors", title: "Redefinir Senha" }, e('i', { 'data-lucide': "key-round", className: "w-5 h-5" })),
+                                                e('button', { onClick: () => handleDeleteUser(user.email), className: "p-1.5 text-slate-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-colors", title: "Excluir" }, e('i', { 'data-lucide': "trash-2", className: "w-5 h-5" }))
+                                            )
+                                        )
+                                    )
+                                ))
+                            )
+                        )
+                    )
+                )
+            )
+        )
     );
 }
 
